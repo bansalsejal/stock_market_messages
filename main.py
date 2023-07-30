@@ -2,18 +2,23 @@ import requests
 import datetime as dt
 from datetime import timedelta
 from twilio.rest import Client
-
+import os
 Func = "TIME_SERIES_DAILY"
 STOCK = "Cipla"
-ALPHAVANTAGE_API = "Z0PACBUFR116DWJJ"
-NEWS_API = "64bcae21946d4b679fa7871dd5b906cd"
-ACCOUNT_SID = "AC0b65f8c4729c18fe12ded1cdc846bd1d"
-AUTH_TOKEN = "adb71c119a9eeda7042f6088a1afebf3"
+
+ALPHAVANTAGE_API = os.environ.get("ALPHAVANTAGE_API")
+ACCOUNT_SID = os.environ.get("ACCOUNT_SID")
+AUTH_TOKEN = os.environ.get("AUTH_TOKEN")
+NEWS_API = os.environ.get("NEWS_API")
 client = Client(ACCOUNT_SID, AUTH_TOKEN)
 
-now = dt.datetime.now().date()
-yesterday_date = str(now - timedelta(days=1))
-day_before_yesterday_date = str(now - timedelta(days=2))
+now = dt.datetime.now()
+if now.weekday() != 6:
+    yesterday_date = str(now.date() - timedelta(days=1))
+    day_before_yesterday_date = str(now.date() - timedelta(days=2))
+else:
+    yesterday_date = str(now.date() - timedelta(days=2))
+    day_before_yesterday_date = str(now.date() - timedelta(days=3))
 
 
 def get_news(percentage):
@@ -37,10 +42,10 @@ stock_response = requests.get(
     url=f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={STOCK}.BSE&outputsize=full&apikey="
         f"{ALPHAVANTAGE_API}")
 stock_yesterday = float(stock_response.json()["Time Series (Daily)"][yesterday_date]["4. close"])
+
 stock_day_before_yesterday = float(stock_response.json()["Time Series (Daily)"][day_before_yesterday_date]["4. close"])
 
 STOCK_PERCENTAGE = (stock_yesterday - stock_day_before_yesterday)/stock_yesterday * 100
-
 if STOCK_PERCENTAGE > 1:
     get_news(f"▲ {STOCK_PERCENTAGE}%")
 elif STOCK_PERCENTAGE < -1:
